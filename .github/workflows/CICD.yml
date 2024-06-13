@@ -1,8 +1,9 @@
 name: Build and Deploy a nodeApp to Cloud Run using GCR
+
 on:
   push:
     branches:
-    - master
+      - master
 
 env:
   PROJECT_ID: ${{ secrets.PROJECT_ID }}
@@ -18,12 +19,17 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    # Authenticate with Google Cloud
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.SERVICE_ACCOUNT_KEY }}
+
     # Setup gcloud CLI
-    - uses: google-github-actions/setup-gcloud@v1
+    - name: Setup gcloud
+      uses: google-github-actions/setup-gcloud@v1
       with:
         version: '290.0.1'
-        service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY }}
-        project_id: ${{ secrets.PROJECT_ID}}
 
     # Build and push image to Google Container Registry
     - name: Build
@@ -31,6 +37,7 @@ jobs:
         gcloud builds submit \
           --quiet \
           --tag "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
+
     # Deploy image to Cloud Run
     - name: Deploy
       run: |-
