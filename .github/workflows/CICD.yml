@@ -19,29 +19,35 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    # Install a specific version of the gcloud SDK
+    - name: Install gcloud SDK
+      run: |
+        curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-290.0.1-linux-x86_64.tar.gz
+        tar zxvf google-cloud-sdk-290.0.1-linux-x86_64.tar.gz
+        ./google-cloud-sdk/install.sh -q
+
     # Authenticate with Google Cloud
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
         credentials_json: ${{ secrets.SERVICE_ACCOUNT_KEY }}
 
-    # Setup gcloud CLI
-    - name: Setup gcloud
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        version: '290.0.1'
+    # Initialize the gcloud SDK
+    - name: Initialize gcloud
+      run: |
+        ./google-cloud-sdk/bin/gcloud init --skip-diagnostics
 
     # Build and push image to Google Container Registry
     - name: Build
       run: |-
-        gcloud builds submit \
+        ./google-cloud-sdk/bin/gcloud builds submit \
           --quiet \
           --tag "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
 
     # Deploy image to Cloud Run
     - name: Deploy
       run: |-
-        gcloud run deploy "$SERVICE_NAME" \
+        ./google-cloud-sdk/bin/gcloud run deploy "$SERVICE_NAME" \
           --quiet \
           --region "$RUN_REGION" \
           --image "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA" \
