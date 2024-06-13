@@ -9,7 +9,6 @@ env:
   PROJECT_ID: ${{ secrets.PROJECT_ID }}
   RUN_REGION: us-central1
   SERVICE_NAME: helloworld-NodeApp
-  CLOUDSDK_PYTHON: /usr/bin/python3
 
 jobs:
   setup-build-deploy:
@@ -19,6 +18,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
+    # Setup Python 3.9 (compatible version)
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
 
     # Authenticate with Google Cloud
     - name: Authenticate to Google Cloud
