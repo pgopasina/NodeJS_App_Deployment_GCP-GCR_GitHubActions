@@ -1,55 +1,39 @@
-name: Build and Deploy a nodeApp to Cloud Run using GCR
+name: Deploy to Cloud Run
 
 on:
   push:
     branches:
       - master
 
-env:
-  PROJECT_ID: ${{ secrets.PROJECT_ID }}
-  RUN_REGION: us-central1
-  SERVICE_NAME: helloworld-NodeApp
-
 jobs:
-  setup-build-deploy:
-    name: Setup, Build, and Deploy
+  deploy:
+    name: Deploy to Cloud Run
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    # Setup Python 3.9 (compatible version)
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
+      # Authenticate with Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.SERVICE_ACCOUNT_KEY }}
 
-    # Authenticate with Google Cloud
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v1
-      with:
-        credentials_json: ${{ secrets.SERVICE_ACCOUNT_KEY }}
+      # Set up gcloud CLI
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          version: '290.0.1'
+          service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY }}
+          project_id: ${{ secrets.PROJECT_ID }}
 
-    # Setup gcloud CLI
-    - name: Setup gcloud
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        version: '290.0.1'
+      # Run Cloud Build using cloudbuild.yaml
+      - name: Run Cloud Build
+        run: |
+          gcloud builds submit --config cloudbuild.yaml --substitutions=_COMMIT_SHA=$(git rev-parse --short HEAD)
 
-    # Build and push image to Google Container Registry
-    - name: Build
-      run: |-
-        gcloud builds submit \
-          --quiet \
-          --tag "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
-
-    # Deploy image to Cloud Run
-    - name: Deploy
-      run: |-
-        gcloud run deploy "$SERVICE_NAME" \
-          --quiet \
-          --region "$RUN_REGION" \
-          --image "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA" \
-          --platform "managed" \
-          --allow-unauthenticated
+      # Output deployment status
+      - name: Show deployment status
+        run: |
+          echo "Deployment to Cloud Run completed successfully!"
