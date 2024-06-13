@@ -16,24 +16,27 @@ jobs:
 
       # Authenticate with Google Cloud
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.SERVICE_ACCOUNT_KEY }}
-
-      # Set up gcloud CLI
-      - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          version: '290.0.1'
-          service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY }}
-          project_id: ${{ secrets.PROJECT_ID }}
-
-      # Run Cloud Build using cloudbuild.yaml
-      - name: Run Cloud Build
         run: |
-          gcloud builds submit --config cloudbuild.yaml --substitutions=_COMMIT_SHA=$(git rev-parse --short HEAD)
+          echo ${{ secrets.SERVICE_ACCOUNT_KEY }} > gcloud-auth.json
+          gcloud auth activate-service-account --key-file=gcloud-auth.json
+          gcloud config set project ${{ secrets.PROJECT_ID }}
 
-      # Output deployment status
-      - name: Show deployment status
+      # Set default region for gcloud (optional)
+      - name: Set gcloud default region
         run: |
-          echo "Deployment to Cloud Run completed successfully!"
+          gcloud config set run/region us-central1
+
+      # Install Node.js (if necessary) and dependencies
+      - name: Install Node.js and npm
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      # Build and deploy to Cloud Run using Cloud Build
+      - name: Build and Deploy
+        run: |
+          gcloud builds submit --tag gcr.io/${{ secrets.PROJECT_ID }}/${{ env.SERVICE_NAME }}:$GITHUB_SHA
+          gcloud run deploy ${{ env.SERVICE_NAME }} --image gcr.io/${{ secrets.PROJECT_ID }}/${{ env.SERVICE_NAME }}:$GITHUB_SHA --platform managed --allow-unauthenticated
