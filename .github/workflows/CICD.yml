@@ -14,12 +14,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Authenticate with Google Cloud
-      - name: Authenticate to Google Cloud
-        run: |
-          echo ${{ secrets.SERVICE_ACCOUNT_KEY }} > gcloud-auth.json
-          gcloud auth activate-service-account --key-file=gcloud-auth.json
-          gcloud config set project ${{ secrets.PROJECT_ID }}
+      # Authenticate with Google Cloud (using dedicated action)
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       # Set default region for gcloud (optional)
       - name: Set gcloud default region
@@ -27,8 +25,7 @@ jobs:
           gcloud config set run/region us-central1
 
       # Install Node.js (if necessary) and dependencies
-      - name: Install Node.js and npm
-        uses: actions/setup-node@v2
+      - uses: actions/setup-node@v2
         with:
           node-version: '14'
 
@@ -40,3 +37,7 @@ jobs:
         run: |
           gcloud builds submit --tag gcr.io/${{ secrets.PROJECT_ID }}/${{ env.SERVICE_NAME }}:$GITHUB_SHA
           gcloud run deploy ${{ env.SERVICE_NAME }} --image gcr.io/${{ secrets.PROJECT_ID }}/${{ env.SERVICE_NAME }}:$GITHUB_SHA --platform managed --allow-unauthenticated
+
+      # Optional: Clean up temporary authentication file (security best practice)
+      - name: Clean Up Temporary Credentials
+        run: rm gcloud-auth.json  # Only if using temporary file approach
