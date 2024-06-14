@@ -16,7 +16,7 @@ jobs:
         
       - name: Print Environment Variables
         run: |
-          echo "GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}"
+          echo "SERVICE_ACCOUNT_KEY: ${{ secrets.SERVICE_ACCOUNT_KEY }}"
 
       # Authenticate with Google Cloud (using dedicated action)
       - uses: google-github-actions/auth@v2
