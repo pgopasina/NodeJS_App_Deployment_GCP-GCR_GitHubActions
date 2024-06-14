@@ -17,7 +17,7 @@ jobs:
       # Authenticate with Google Cloud (using dedicated action)
       - uses: google-github-actions/auth@v2
         with:
-          credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          credentials: ${{ secrets.SERVICE_ACCOUNT_KEY }}
 
       # Set default region for gcloud (optional)
       - name: Set gcloud default region
